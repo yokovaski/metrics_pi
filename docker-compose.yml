@@ -1,0 +1,53 @@
+# Run on each Raspberry Pi:
+#   cp .env.example .env && edit .env
+#   docker compose up -d --build
+#
+# Requires Docker Engine + Compose v2. Pi 5 / arm64 tested.
+
+services:
+  telegraf:
+    build:
+      context: ./docker
+      args:
+        TELEGRAF_VERSION: "1.32"
+    image: metrics-pi/telegraf:1.32
+    container_name: telegraf
+    restart: unless-stopped
+
+    # host network so MQTT reaches HA directly and Telegraf picks up the
+    # Pi's real hostname for per-host topic routing.
+    network_mode: host
+    pid: host
+
+    # smartctl needs raw device access. Narrow this if your distro/adapter
+    # allows; --privileged is the known-good fallback across USB-SATA bridges.
+    privileged: true
+
+    environment:
+      HOST_PROC: /hostfs/proc
+      HOST_SYS: /hostfs/sys
+      HOST_ETC: /hostfs/etc
+      HOST_MOUNT_PREFIX: /hostfs
+      HA_HOST: ${HA_HOST}
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASS: ${MQTT_PASS}
+
+    volumes:
+      - /proc:/hostfs/proc:ro
+      - /sys:/hostfs/sys:ro
+      - /etc:/hostfs/etc:ro
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+
+    # Pass devices through so smartctl/nvme can read them. Adjust per-Pi
+    # based on `sudo smartctl --scan`. NVMe needs the controller char
+    # device (/dev/nvme0) — NOT the block device (/dev/nvme0n1) —
+    # because smartctl talks to the controller, not a namespace.
+    devices:
+      - /dev/nvme0:/dev/nvme0
+      - /dev/sda:/dev/sda
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -1,0 +1,3 @@
+# Deploy to /etc/sudoers.d/telegraf on each Pi (via `sudo visudo -f`).
+# Grants the telegraf daemon user permission to read SMART data.
+telegraf ALL=(ALL) NOPASSWD: /usr/sbin/smartctl, /usr/sbin/nvme

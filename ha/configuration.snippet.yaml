@@ -1,0 +1,20 @@
+# Snippet to merge into /config/configuration.yaml on Home Assistant OS.
+# (Do not replace the file — append these blocks.)
+
+homeassistant:
+  packages: !include_dir_named packages
+
+influxdb:
+  api_version: 2
+  host: a0d7b954-influxdb            # hostname of the InfluxDB addon container
+  port: 8086
+  ssl: false
+  token: !secret influxdb_token
+  organization: !secret influxdb_org
+  bucket: homeassistant
+  include:
+    entity_globs:
+      - sensor.pi_*_cpu
+      - sensor.pi_*_ram
+      - sensor.pi_*_cpu_temperature
+      - sensor.pi_*_*_temperature    # per-disk: pi_a_nvme0_temperature, pi_a_sda_temperature
