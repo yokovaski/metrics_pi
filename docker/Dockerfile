@@ -7,8 +7,11 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       smartmontools \
       nvme-cli \
+      libcap2-bin \
  && rm -rf /var/lib/apt/lists/* \
- && usermod -aG disk telegraf
+ && usermod -aG disk telegraf \
+ && setcap cap_sys_rawio,cap_sys_admin+ep /usr/sbin/smartctl \
+ && setcap cap_sys_rawio,cap_sys_admin+ep /usr/sbin/nvme
 
 COPY smart_probe.sh /usr/local/bin/smart_probe.sh
 RUN chmod +x /usr/local/bin/smart_probe.sh
