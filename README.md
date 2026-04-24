@@ -148,24 +148,23 @@ literal values), deploy `telegraf/sudoers.d_telegraf` via `sudo visudo
 -f /etc/sudoers.d/telegraf`, set `use_sudo = true` in the smart input,
 then `sudo systemctl enable --now telegraf`. Not available on Trixie.
 
-## Step 3 — Register HA entities (once)
+## Step 3 — Register HA entities (once per Pi)
 
-Edit `scripts/publish_discovery.sh` — set `FLEET` to match your
-hostnames and each Pi's SMART device list from Step 2b:
+Run the discovery script on each Pi. It auto-detects the hostname and
+SMART devices via `smartctl --scan`, and reads `HA_HOST` / `MQTT_USER`
+/ `MQTT_PASS` from the same `.env` you created in Step 2c:
 
 ```bash
-FLEET=(
-  "pi-a:nvme0,sda"
-  "pi-b:nvme0,sda"
-  "pi-c:nvme0"
-)
+sudo apt-get install -y mosquitto-clients
+bash scripts/publish_discovery.sh
 ```
 
-Run it:
+Alternatively, run once from a workstation by setting `FLEET` to a
+space-separated list of `host:disk1,disk2,...` entries (still reads
+`.env` for credentials):
 
 ```bash
-HA_HOST=homeassistant.local \
-MQTT_PASS='<password from Step 1a>' \
+FLEET="pi-a:nvme0,sda pi-b:nvme0,sda pi-c:nvme0" \
 bash scripts/publish_discovery.sh
 ```
 
@@ -229,9 +228,8 @@ When done, export the dashboard JSON to `grafana/dashboards/pi_fleet.json`.
 
 1. Run Step 2 on the new Pi (clone, `.env`, adjust `devices:` in
    `docker-compose.yml` for its disks, `docker compose up -d --build`).
-2. Add its line to `FLEET=(...)` in `publish_discovery.sh`.
-3. Re-run the script.
-4. Add globs in HA `configuration.yaml` if the hostname prefix changes.
+2. Run Step 3 on the new Pi to publish its discovery configs.
+3. Add globs in HA `configuration.yaml` if the hostname prefix changes.
 
 No changes needed in HA UI or Grafana — new entities flow through
 automatically, and any dashboard panel using `entity_id =~ /^pi_/`
