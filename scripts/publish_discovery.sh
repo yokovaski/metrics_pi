@@ -19,6 +19,11 @@
 
 set -euo pipefail
 
+# Non-login shells (e.g. `ssh host 'bash script.sh'`) don't include sbin
+# paths where smartctl/nvme typically live. Extend PATH so `command -v`
+# and sudo both resolve them.
+export PATH="/usr/local/sbin:/usr/sbin:/sbin:${PATH}"
+
 # Load .env from repo root if present (same file docker compose reads).
 # Existing env vars take precedence — the file only fills in what's unset.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
