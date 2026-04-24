@@ -8,3 +8,6 @@ RUN apt-get update \
       smartmontools \
       nvme-cli \
  && rm -rf /var/lib/apt/lists/*
+
+COPY smart_probe.sh /usr/local/bin/smart_probe.sh
+RUN chmod +x /usr/local/bin/smart_probe.sh
