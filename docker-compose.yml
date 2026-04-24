@@ -23,6 +23,13 @@ services:
     # allows; --privileged is the known-good fallback across USB-SATA bridges.
     privileged: true
 
+    # The upstream entrypoint calls setpriv with only the groups returned by
+    # `id -Gn`, so a Dockerfile `usermod -aG disk telegraf` is ignored. Using
+    # group_add injects the extra group at container start so the telegraf
+    # process inherits it and can open /dev/sda.
+    group_add:
+      - disk
+
     environment:
       HOST_PROC: /hostfs/proc
       HOST_SYS: /hostfs/sys
