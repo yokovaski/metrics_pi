@@ -7,7 +7,8 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       smartmontools \
       nvme-cli \
- && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/* \
+ && usermod -aG disk telegraf
 
 COPY smart_probe.sh /usr/local/bin/smart_probe.sh
 RUN chmod +x /usr/local/bin/smart_probe.sh
