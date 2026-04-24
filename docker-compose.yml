@@ -23,6 +23,11 @@ services:
     # allows; --privileged is the known-good fallback across USB-SATA bridges.
     privileged: true
 
+    # The upstream telegraf image runs as uid 999 which cannot open block
+    # devices, so smart probes fail with "Permission denied". Run as root
+    # (container is already privileged) so inputs.exec can read /dev/sda.
+    user: "0"
+
     environment:
       HOST_PROC: /hostfs/proc
       HOST_SYS: /hostfs/sys
