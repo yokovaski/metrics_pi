@@ -10,8 +10,8 @@ RUN apt-get update \
       libcap2-bin \
  && rm -rf /var/lib/apt/lists/* \
  && usermod -aG disk telegraf \
- && setcap cap_sys_rawio,cap_sys_admin+ep /usr/sbin/smartctl \
- && setcap cap_sys_rawio,cap_sys_admin+ep /usr/sbin/nvme
+ && setcap cap_sys_rawio,cap_sys_admin,cap_dac_override+ep /usr/sbin/smartctl \
+ && setcap cap_sys_rawio,cap_sys_admin,cap_dac_override+ep /usr/sbin/nvme
 
 COPY smart_probe.sh /usr/local/bin/smart_probe.sh
 RUN chmod +x /usr/local/bin/smart_probe.sh
