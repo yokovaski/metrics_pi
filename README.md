@@ -32,8 +32,11 @@ grafana/dashboards/             # export your Grafana dashboard JSON here
   HA on TCP 1883, running Raspberry Pi OS Bookworm or Trixie, with
   Docker Engine and Compose v2 installed (`curl -fsSL https://get.docker.com | sh`,
   then `sudo usermod -aG docker $USER` and re-login).
-- `mosquitto_clients` on the machine you'll run the discovery script
-  from (`sudo apt-get install mosquitto-clients`).
+- `mosquitto-clients` and `smartmontools` on the machine you'll run the
+  discovery script from (`sudo apt-get install -y mosquitto-clients
+  smartmontools`). `smartmontools` is used by the script to auto-detect
+  SMART devices via `smartctl --scan`; skip it only if you set `FLEET`
+  explicitly.
 
 ## Step 1 — Home Assistant side
 
