@@ -69,21 +69,21 @@ for entry in "${FLEET_ARR[@]}"; do
   pub "homeassistant/sensor/${h}/cpu/config" \
 "{\"name\":\"${h} CPU\",\"unique_id\":\"${h}_cpu\",\
 \"state_topic\":\"metrics_pi/${h}/cpu\",\
-\"value_template\":\"{{ (100 - value_json.usage_idle) | round(1) }}\",\
+\"value_template\":\"{{ (100 - value_json.fields.usage_idle) | round(1) }}\",\
 \"unit_of_measurement\":\"%\",\"state_class\":\"measurement\",\
 \"device\":${dev}}"
 
   pub "homeassistant/sensor/${h}/ram/config" \
 "{\"name\":\"${h} RAM\",\"unique_id\":\"${h}_ram\",\
 \"state_topic\":\"metrics_pi/${h}/mem\",\
-\"value_template\":\"{{ value_json.used_percent | round(1) }}\",\
+\"value_template\":\"{{ value_json.fields.used_percent | round(1) }}\",\
 \"unit_of_measurement\":\"%\",\"state_class\":\"measurement\",\
 \"device\":${dev}}"
 
   pub "homeassistant/sensor/${h}/temp_cpu/config" \
 "{\"name\":\"${h} CPU temperature\",\"unique_id\":\"${h}_temp_cpu\",\
-\"state_topic\":\"metrics_pi/${h}/temperature\",\
-\"value_template\":\"{% if value_json.sensor == 'cpu_thermal' %}{{ value_json.temp }}{% endif %}\",\
+\"state_topic\":\"metrics_pi/${h}/temp\",\
+\"value_template\":\"{% if value_json.tags.sensor == 'cpu_thermal' %}{{ value_json.fields.temp }}{% else %}{{ this.state }}{% endif %}\",\
 \"device_class\":\"temperature\",\"unit_of_measurement\":\"°C\",\
 \"state_class\":\"measurement\",\"device\":${dev}}"
 
@@ -92,7 +92,7 @@ for entry in "${FLEET_ARR[@]}"; do
     pub "homeassistant/sensor/${h}/temp_${d}/config" \
 "{\"name\":\"${h} ${d} temperature\",\"unique_id\":\"${h}_temp_${d}\",\
 \"state_topic\":\"metrics_pi/${h}/smart_device\",\
-\"value_template\":\"{% if value_json.device == '${d}' %}{{ value_json.temp_c }}{% endif %}\",\
+\"value_template\":\"{% if value_json.tags.device == '${d}' %}{{ value_json.fields.temp_c }}{% else %}{{ this.state }}{% endif %}\",\
 \"device_class\":\"temperature\",\"unit_of_measurement\":\"°C\",\
 \"state_class\":\"measurement\",\"device\":${dev}}"
   done
