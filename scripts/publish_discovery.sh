@@ -96,6 +96,15 @@ pub() {
     -r -t "$topic" -m "$payload"
 }
 
+# Publish an empty retained payload to drop a previously retained discovery
+# config — HA removes the entity and the broker drops the retained message.
+pub_clear() {
+  local topic="$1"
+  mosquitto_pub -h "$HA_HOST" -p "$MQTT_PORT" \
+    -u "$MQTT_USER" -P "$MQTT_PASS" \
+    -r -n -t "$topic"
+}
+
 for entry in "${FLEET_ARR[@]}"; do
   h="${entry%%:*}"
   disks="${entry#*:}"
@@ -131,17 +140,21 @@ for entry in "${FLEET_ARR[@]}"; do
 \"device_class\":\"temperature\",\"unit_of_measurement\":\"°C\",\
 \"state_class\":\"measurement\",\"device\":${dev}}"
 
-    # Disk used-percent sensor: only in local mode (lsblk runs against the
+    # Disk free-bytes sensor: only in local mode (lsblk runs against the
     # local host's block devices). Workstation FLEET mode skips this — re-run
     # `bash scripts/publish_discovery.sh` on each Pi to publish them.
+    # device_class=data_size + unit B lets HA auto-render as GB/TB in the UI.
     if $LOCAL_MODE; then
+      # Drop the prior used-% sensor if it was previously published.
+      pub_clear "homeassistant/sensor/${h}/disk_${d}_used/config"
       if mp_info=$(disk_primary_mount "$d"); then
         dev_tag="${mp_info%$'\t'*}"
-        pub "homeassistant/sensor/${h}/disk_${d}_used/config" \
-"{\"name\":\"${h} ${d} disk used\",\"unique_id\":\"${h}_disk_${d}_used\",\
+        pub "homeassistant/sensor/${h}/disk_${d}_free/config" \
+"{\"name\":\"${h} ${d} free space\",\"unique_id\":\"${h}_disk_${d}_free\",\
 \"state_topic\":\"metrics_pi/${h}/disk\",\
-\"value_template\":\"{% if value_json.tags.device == '${dev_tag}' %}{{ value_json.fields.used_percent | round(1) }}{% else %}{{ this.state }}{% endif %}\",\
-\"unit_of_measurement\":\"%\",\"state_class\":\"measurement\",\
+\"value_template\":\"{% if value_json.tags.device == '${dev_tag}' %}{{ value_json.fields.free }}{% else %}{{ this.state }}{% endif %}\",\
+\"device_class\":\"data_size\",\"unit_of_measurement\":\"B\",\
+\"suggested_unit_of_measurement\":\"GB\",\"state_class\":\"measurement\",\
 \"icon\":\"mdi:harddisk\",\"device\":${dev}}"
       fi
     fi
