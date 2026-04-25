@@ -41,6 +41,7 @@ MQTT_PASS="${MQTT_PASS:?set MQTT_PASS in .env or environment}"
 MQTT_PORT="${MQTT_PORT:-1883}"
 
 if [[ -z "${FLEET:-}" ]]; then
+  LOCAL_MODE=true
   h=$(hostname)
   if ! command -v smartctl >/dev/null 2>&1; then
     echo "smartctl not found — install smartmontools or set FLEET explicitly" >&2
@@ -55,9 +56,38 @@ if [[ -z "${FLEET:-}" ]]; then
   fi
   FLEET_ARR=("${h}:${disks}")
 else
+  LOCAL_MODE=false
   # shellcheck disable=SC2206
   FLEET_ARR=(${FLEET})
 fi
+
+# nvme0 (smartctl controller name) -> nvme0n1 (block device for filesystem)
+# sda                              -> sda
+disk_block_dev() {
+  case "$1" in
+    nvme*) printf '/dev/%sn1' "$1" ;;
+    *)     printf '/dev/%s' "$1" ;;
+  esac
+}
+
+# Echoes "<partition_dev>\t<mountpoint>" for the primary mounted partition
+# of the disk (prefers "/", then first non-swap mount). Returns 1 if none.
+# Only meaningful in LOCAL_MODE where we can inspect the host's lsblk.
+disk_primary_mount() {
+  local block; block=$(disk_block_dev "$1")
+  [[ -b "$block" ]] || return 1
+  local rows
+  rows=$(lsblk -nrpo NAME,MOUNTPOINTS "$block" 2>/dev/null \
+    | awk '$2 != "" && $2 != "[SWAP]" { sub("^/dev/","",$1); print $1"\t"$2 }')
+  [[ -z "$rows" ]] && return 1
+  local root_line
+  root_line=$(printf '%s\n' "$rows" | awk -F'\t' '$2=="/" {print; exit}')
+  if [[ -n "$root_line" ]]; then
+    printf '%s\n' "$root_line"
+  else
+    printf '%s\n' "$rows" | head -n1
+  fi
+}
 
 pub() {
   local topic="$1" payload="$2"
@@ -100,6 +130,21 @@ for entry in "${FLEET_ARR[@]}"; do
 \"value_template\":\"{% if value_json.tags.device == '${d}' %}{{ value_json.fields.temp_c }}{% else %}{{ this.state }}{% endif %}\",\
 \"device_class\":\"temperature\",\"unit_of_measurement\":\"°C\",\
 \"state_class\":\"measurement\",\"device\":${dev}}"
+
+    # Disk used-percent sensor: only in local mode (lsblk runs against the
+    # local host's block devices). Workstation FLEET mode skips this — re-run
+    # `bash scripts/publish_discovery.sh` on each Pi to publish them.
+    if $LOCAL_MODE; then
+      if mp_info=$(disk_primary_mount "$d"); then
+        dev_tag="${mp_info%$'\t'*}"
+        pub "homeassistant/sensor/${h}/disk_${d}_used/config" \
+"{\"name\":\"${h} ${d} disk used\",\"unique_id\":\"${h}_disk_${d}_used\",\
+\"state_topic\":\"metrics_pi/${h}/disk\",\
+\"value_template\":\"{% if value_json.tags.device == '${dev_tag}' %}{{ value_json.fields.used_percent | round(1) }}{% else %}{{ this.state }}{% endif %}\",\
+\"unit_of_measurement\":\"%\",\"state_class\":\"measurement\",\
+\"icon\":\"mdi:harddisk\",\"device\":${dev}}"
+      fi
+    fi
   done
 
   echo "published discovery for ${h} (disks: ${disks})"

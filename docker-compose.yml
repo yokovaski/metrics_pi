@@ -39,10 +39,12 @@ services:
       MQTT_USER: ${MQTT_USER}
       MQTT_PASS: ${MQTT_PASS}
 
+    # rbind host root so inputs.disk can statfs real filesystems via
+    # ${HOST_MOUNT_PREFIX}=/hostfs. rslave propagation lets the container
+    # see new mounts (USB drives, etc.) without leaking back. Container is
+    # already privileged, so this widens nothing security-wise.
     volumes:
-      - /proc:/hostfs/proc:ro
-      - /sys:/hostfs/sys:ro
-      - /etc:/hostfs/etc:ro
+      - /:/hostfs:ro,rslave
       - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
 
     # Pass devices through so smartctl/nvme can read them. Adjust per-Pi

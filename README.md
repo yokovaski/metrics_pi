@@ -2,10 +2,10 @@
 
 Pipeline: Raspberry Pi → Telegraf → MQTT → Home Assistant → InfluxDB → Grafana.
 
-Three Pis push CPU, RAM, SoC temperature, and per-disk (NVMe + SATA)
-temperature into Home Assistant as MQTT sensor entities. HA's InfluxDB
-integration mirrors entity states into the InfluxDB addon. Grafana
-addon reads InfluxDB for dashboards.
+Three Pis push CPU, RAM, SoC temperature, per-disk (NVMe + SATA)
+temperature, and per-disk filesystem used % into Home Assistant as MQTT
+sensor entities. HA's InfluxDB integration mirrors entity states into
+the InfluxDB addon. Grafana addon reads InfluxDB for dashboards.
 
 Full design: `/home/erwin/.claude/plans/i-have-3-raspberry-fuzzy-penguin.md`.
 
@@ -187,7 +187,8 @@ then `sudo systemctl enable --now telegraf`. Not available on Trixie.
 
 2. HA UI → **Settings → Devices & Services → MQTT → Devices**. Should
    list each Pi as a device with sensors for CPU %, RAM %, CPU
-   temperature, plus per-disk SMART temperature.
+   temperature, plus per-disk SMART temperature and filesystem
+   used %.
 
 3. HA UI → **Developer Tools → States** → filter `pi_` — all sensors
    show numeric values, none say `unknown`.
