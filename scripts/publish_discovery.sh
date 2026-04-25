@@ -145,7 +145,8 @@ for entry in "${FLEET_ARR[@]}"; do
     # `bash scripts/publish_discovery.sh` on each Pi to publish them.
     # device_class=data_size + unit B lets HA auto-render as GB/TB in the UI.
     if $LOCAL_MODE; then
-      # Drop the prior used-% sensor if it was previously published.
+      # Drop the prior ambiguously-named "disk used" sensor (was % used,
+      # name didn't say so). Replaced by disk_${d}_used_pct below.
       pub_clear "homeassistant/sensor/${h}/disk_${d}_used/config"
       if mp_info=$(disk_primary_mount "$d"); then
         dev_tag="${mp_info%$'\t'*}"
@@ -155,6 +156,13 @@ for entry in "${FLEET_ARR[@]}"; do
 \"value_template\":\"{% if value_json.tags.device == '${dev_tag}' %}{{ value_json.fields.free }}{% else %}{{ this.state }}{% endif %}\",\
 \"device_class\":\"data_size\",\"unit_of_measurement\":\"B\",\
 \"suggested_unit_of_measurement\":\"GB\",\"state_class\":\"measurement\",\
+\"icon\":\"mdi:harddisk\",\"device\":${dev}}"
+
+        pub "homeassistant/sensor/${h}/disk_${d}_used_pct/config" \
+"{\"name\":\"${h} ${d} disk used %\",\"unique_id\":\"${h}_disk_${d}_used_pct\",\
+\"state_topic\":\"metrics_pi/${h}/disk\",\
+\"value_template\":\"{% if value_json.tags.device == '${dev_tag}' %}{{ value_json.fields.used_percent | round(1) }}{% else %}{{ this.state }}{% endif %}\",\
+\"unit_of_measurement\":\"%\",\"state_class\":\"measurement\",\
 \"icon\":\"mdi:harddisk\",\"device\":${dev}}"
       fi
     fi
