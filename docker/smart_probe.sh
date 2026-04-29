@@ -16,11 +16,29 @@ set -u
 
 DEVICE="${1:-/dev/sda}"
 TYPE="${2:-sat}"
+# Optional active-hours window in local time. With both set, the script
+# only probes when current hour is in [START, END). Outside the window it
+# emits "{}" so json_v2 produces no fields and no MQTT metric is written —
+# letting drives that idle (USB-SATA HDDs) actually spin down overnight.
+# Container must mount /etc/localtime for this to use Pi-local time.
+WINDOW_START="${3:-}"
+WINDOW_END="${4:-}"
 LOG=/tmp/smart_probe.log
 
 log() { printf '[%s] %s\n' "$(date -u +%FT%TZ)" "$*" >>"$LOG"; }
 
-log "run device=$DEVICE type=$TYPE"
+log "run device=$DEVICE type=$TYPE window=${WINDOW_START:-always}-${WINDOW_END:-always}"
+
+if [ -n "$WINDOW_START" ] && [ -n "$WINDOW_END" ]; then
+  hour=$(date +%H)
+  hour=${hour#0}
+  : "${hour:=0}"
+  if [ "$hour" -lt "$WINDOW_START" ] || [ "$hour" -ge "$WINDOW_END" ]; then
+    log "outside window; skipping probe"
+    printf '{}'
+    exit 0
+  fi
+fi
 
 # Pre-wake: blocks until the drive finishes spin-up.
 dd if="$DEVICE" of=/dev/null bs=1M count=1 iflag=direct 2>>"$LOG" || log "dd warn rc=$?"

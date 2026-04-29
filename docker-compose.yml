@@ -46,6 +46,9 @@ services:
     volumes:
       - /:/hostfs:ro,rslave
       - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      # smart_probe.sh's active-hours window uses local time. Without this
+      # mount the container is UTC and the window would shift by your offset.
+      - /etc/localtime:/etc/localtime:ro
 
     # Pass devices through so smartctl/nvme can read them. Adjust per-Pi
     # based on `sudo smartctl --scan`. NVMe needs the controller char
