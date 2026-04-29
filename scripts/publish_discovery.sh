@@ -115,6 +115,7 @@ for entry in "${FLEET_ARR[@]}"; do
 \"state_topic\":\"metrics_pi/${h}/cpu\",\
 \"value_template\":\"{{ (100 - value_json.fields.usage_idle) | round(1) }}\",\
 \"unit_of_measurement\":\"%\",\"state_class\":\"measurement\",\
+\"force_update\":true,\
 \"device\":${dev}}"
 
   pub "homeassistant/sensor/${h}/ram/config" \
@@ -122,6 +123,7 @@ for entry in "${FLEET_ARR[@]}"; do
 \"state_topic\":\"metrics_pi/${h}/mem\",\
 \"value_template\":\"{{ value_json.fields.used_percent | round(1) }}\",\
 \"unit_of_measurement\":\"%\",\"state_class\":\"measurement\",\
+\"force_update\":true,\
 \"device\":${dev}}"
 
   pub "homeassistant/sensor/${h}/temp_cpu/config" \
@@ -129,7 +131,8 @@ for entry in "${FLEET_ARR[@]}"; do
 \"state_topic\":\"metrics_pi/${h}/temp\",\
 \"value_template\":\"{% if value_json.tags.sensor == 'cpu_thermal' %}{{ value_json.fields.temp }}{% else %}{{ this.state }}{% endif %}\",\
 \"device_class\":\"temperature\",\"unit_of_measurement\":\"°C\",\
-\"state_class\":\"measurement\",\"device\":${dev}}"
+\"state_class\":\"measurement\",\"force_update\":true,\
+\"device\":${dev}}"
 
   IFS=',' read -ra DISKS <<< "$disks"
   for d in "${DISKS[@]}"; do
@@ -138,7 +141,8 @@ for entry in "${FLEET_ARR[@]}"; do
 \"state_topic\":\"metrics_pi/${h}/smart_device\",\
 \"value_template\":\"{% if value_json.tags.device == '${d}' %}{{ value_json.fields.temp_c }}{% else %}{{ this.state }}{% endif %}\",\
 \"device_class\":\"temperature\",\"unit_of_measurement\":\"°C\",\
-\"state_class\":\"measurement\",\"device\":${dev}}"
+\"state_class\":\"measurement\",\"force_update\":true,\
+\"device\":${dev}}"
 
     # Disk free-bytes sensor: only in local mode (lsblk runs against the
     # local host's block devices). Workstation FLEET mode skips this — re-run
@@ -156,6 +160,7 @@ for entry in "${FLEET_ARR[@]}"; do
 \"value_template\":\"{% if value_json.tags.device == '${dev_tag}' %}{{ value_json.fields.free }}{% else %}{{ this.state }}{% endif %}\",\
 \"device_class\":\"data_size\",\"unit_of_measurement\":\"B\",\
 \"suggested_unit_of_measurement\":\"GB\",\"state_class\":\"measurement\",\
+\"force_update\":true,\
 \"icon\":\"mdi:harddisk\",\"device\":${dev}}"
 
         pub "homeassistant/sensor/${h}/disk_${d}_used_pct/config" \
@@ -163,6 +168,7 @@ for entry in "${FLEET_ARR[@]}"; do
 \"state_topic\":\"metrics_pi/${h}/disk\",\
 \"value_template\":\"{% if value_json.tags.device == '${dev_tag}' %}{{ value_json.fields.used_percent | round(1) }}{% else %}{{ this.state }}{% endif %}\",\
 \"unit_of_measurement\":\"%\",\"state_class\":\"measurement\",\
+\"force_update\":true,\
 \"icon\":\"mdi:harddisk\",\"device\":${dev}}"
       fi
     fi
